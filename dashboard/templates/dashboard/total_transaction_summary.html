@@ -1,0 +1,120 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Total Transaction Summary{% endblock %}
+
+{% block content %}
+<h2>Total Transaction Summary</h2>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col">
+            <select name="transaction_range" class="form-control">
+                <option value="">All Transaction Ranges</option>
+                {% for tr in transaction_ranges %}
+                <option value="{{ tr.id }}" {% if filter_values.transaction_range == tr.id|stringformat:"s" %}selected{% endif %}>{{ tr.range_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <select name="type_of_transaction" class="form-control">
+                <option value="">All Transaction Types</option>
+                {% for tt in transaction_types %}
+                <option value="{{ tt.id }}" {% if filter_values.type_of_transaction == tt.id|stringformat:"s" %}selected{% endif %}>{{ tt.transaction_type_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <select name="form_of_instrument" class="form-control">
+                <option value="">All Instruments</option>
+                {% for inst in instrument_types %}
+                <option value="{{ inst.id }}" {% if filter_values.form_of_instrument == inst.id|stringformat:"s" %}selected{% endif %}>{{ inst.instrument_type_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <select name="geographical_location" class="form-control">
+                <option value="">All Locations</option>
+                {% for loc in geographical_locations %}
+                <option value="{{ loc.id }}" {% if filter_values.geographical_location == loc.id|stringformat:"s" %}selected{% endif %}>{{ loc.location_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <select name="channel_used" class="form-control">
+                <option value="">All Channels</option>
+                {% for ch in channels_used %}
+                <option value="{{ ch.id }}" {% if filter_values.channel_used == ch.id|stringformat:"s" %}selected{% endif %}>{{ ch.channel_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col">
+            <input type="number" name="min_transactions" placeholder="Min Transactions" class="form-control" value="{{ filter_values.min_transactions }}">
+        </div>
+        <div class="col">
+            <input type="number" name="max_transactions" placeholder="Max Transactions" class="form-control" value="{{ filter_values.max_transactions }}">
+        </div>
+        <div class="col">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'total_transaction_summary' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </div>
+</form>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Fiscal Year</th>
+            <th>Month/Year</th>
+            <th>Transaction Range</th>
+            <th>Transaction Type</th>
+            <th>Instrument</th>
+            <th>Location</th>
+            <th>Channel</th>
+            <th>Number of Transactions</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in page_obj %}
+        <tr>
+            <td>{{ record.fiscal_year }}</td>
+            <td>{{ record.month_year|date:"M Y" }}</td>
+            <td>{{ record.transaction_range.range_name }}</td>
+            <td>{{ record.type_of_transaction.transaction_type_name }}</td>
+            <td>{{ record.form_of_instrument.instrument_type_name }}</td>
+            <td>{{ record.geographical_location.location_name }}</td>
+            <td>{{ record.channel_used.channel_name }}</td>
+            <td>{{ record.number_of_transactions }}</td>
+            <td>{{ record.amount }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="text-center">No transactions found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <th colspan="7" class="text-end">Total:</th>
+            <th>{{ aggregates.total_transactions|default_if_none:"0" }}</th>
+            <th>{{ aggregates.total_amount|default_if_none:"0.00" }}</th>
+        </tr>
+    </tfoot>
+</table>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">First</a></li>
+      <li class="page-item"><a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+    {% endif %}
+    <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a></li>
+      <li class="page-item"><a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">Last</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}

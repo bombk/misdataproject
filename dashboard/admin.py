@@ -68,14 +68,14 @@ class DataUploadLogAdmin(admin.ModelAdmin):
 
 @admin.register(TotalUser)
 class TotalUserAdmin(admin.ModelAdmin):
-    list_display = ['id','month_year', 'service_type', 'status', 'count', 'created_at', 'updated_at']
+    list_display = ['id','fiscal_year','month_year', 'service_type', 'status', 'count', 'created_at', 'updated_at']
     list_filter = ['month_year']
     search_fields = ['month_year']
     date_hierarchy = 'month_year'
 
 @admin.register(TotalTransaction)
 class TotalTransactionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'month_year', 'transaction_range', 'type_of_transaction','form_of_instrument', 'geographical_location', 'channel_used', 'number_of_transactions','amount', 'created_at', 'updated_at']
+    list_display = ['id','fiscal_year', 'month_year', 'transaction_range', 'type_of_transaction','form_of_instrument', 'geographical_location', 'channel_used', 'number_of_transactions','amount', 'created_at', 'updated_at']
     list_filter = ['month_year']
     search_fields = ['month_year']
     date_hierarchy = 'month_year'

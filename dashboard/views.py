@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
+from django.db import models
 from django.db import transaction
 from datetime import datetime
 from django.contrib.auth import authenticate, login
@@ -13,9 +14,9 @@ import csv
 import io
 import json
 from .models import (
-    Branch, CustomerCategory, ServiceType, TransactionType,
+    Branch, CustomerCategory, ServiceType,TransactionRange, TransactionType,
     InstrumentType, GeographicalLocation, ChannelUsed,
-    CustomerData, TransactionData, DataUploadLog
+    CustomerData, TransactionData, DataUploadLog, TotalUser, TotalTransaction
 )
 
 @login_required
@@ -203,43 +204,43 @@ def process_transaction_data(uploaded_file, month_year):
     except Exception as e:
         return {'status': 'FAILED', 'records_uploaded': 0, 'error_message': str(e)}
 
-@csrf_exempt
-def api_dashboard_data(request):
-    """API endpoint for dashboard charts data"""
-    if request.method == 'GET':
-        # Customer data by status
-        customer_status_data = CustomerData.objects.values('status').annotate(
-            total=Sum('number_of_customers')
-        )
+#@csrf_exempt
+# def api_dashboard_data(request):
+#     """API endpoint for dashboard charts data"""
+#     if request.method == 'GET':
+#         # Customer data by status
+#         customer_status_data = CustomerData.objects.values('status').annotate(
+#             total=Sum('number_of_customers')
+#         )
         
-        # Transaction data by type
-        transaction_type_data = TransactionData.objects.values(
-            'type_of_transaction__transaction_type_name'
-        ).annotate(
-            total_amount=Sum('amount'),
-            total_count=Sum('number_of_transactions')
-        )
+#         # Transaction data by type
+#         transaction_type_data = TransactionData.objects.values(
+#             'type_of_transaction__transaction_type_name'
+#         ).annotate(
+#             total_amount=Sum('amount'),
+#             total_count=Sum('number_of_transactions')
+#         )
         
-        # Monthly trends
-        monthly_customer_data = CustomerData.objects.values('month_year').annotate(
-            total_customers=Sum('number_of_customers')
-        ).order_by('month_year')
+#         # Monthly trends
+#         monthly_customer_data = CustomerData.objects.values('month_year').annotate(
+#             total_customers=Sum('number_of_customers')
+#         ).order_by('month_year')
         
-        monthly_transaction_data = TransactionData.objects.values('month_year').annotate(
-            total_amount=Sum('amount'),
-            total_transactions=Sum('number_of_transactions')
-        ).order_by('month_year')
+#         monthly_transaction_data = TransactionData.objects.values('month_year').annotate(
+#             total_amount=Sum('amount'),
+#             total_transactions=Sum('number_of_transactions')
+#         ).order_by('month_year')
         
-        data = {
-            'customer_status': list(customer_status_data),
-            'transaction_types': list(transaction_type_data),
-            'monthly_customers': list(monthly_customer_data),
-            'monthly_transactions': list(monthly_transaction_data),
-        }
+#         data = {
+#             'customer_status': list(customer_status_data),
+#             'transaction_types': list(transaction_type_data),
+#             'monthly_customers': list(monthly_customer_data),
+#             'monthly_transactions': list(monthly_transaction_data),
+#         }
         
-        return JsonResponse(data)
+#         return JsonResponse(data)
     
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+#     return JsonResponse({'error': 'Method not allowed'}, status=405)
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -261,3 +262,224 @@ def logout_view(request):
     from django.contrib.auth import logout
     logout(request)
     return redirect('login')
+
+def total_user_list(request):
+    status_filter = request.GET.get('status')
+
+    queryset = TotalUser.objects.select_related('service_type').order_by('-month_year')
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+
+    paginator = Paginator(queryset, 10)  # 10 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dashboard/total_user_list.html', {
+        'page_obj': page_obj,
+        'status_filter': status_filter
+    })
+def total_transaction_list(request):
+    transaction_type_filter = request.GET.get('transaction_type')
+
+    queryset = TotalTransaction.objects.select_related(
+        'transaction_range', 'type_of_transaction',
+        'form_of_instrument', 'geographical_location', 'channel_used'
+    ).order_by('-month_year')
+
+    if transaction_type_filter:
+        queryset = queryset.filter(type_of_transaction_id=transaction_type_filter)
+
+    paginator = Paginator(queryset, 10)  # 10 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    transaction_types = TransactionType.objects.all()
+
+    return render(request, 'dashboard/total_transaction_list.html', {
+        'page_obj': page_obj,
+        'transaction_type_filter': transaction_type_filter,
+        'transaction_types': transaction_types
+    })
+
+def total_user_summary(request):
+    fiscal_year = request.GET.get('fiscal_year')
+    month_year = request.GET.get('month_year')
+
+    queryset = TotalUser.objects.all()
+
+    if fiscal_year:
+        queryset = queryset.filter(fiscal_year=fiscal_year)
+
+    if month_year:
+        # Expecting month_year in 'YYYY-MM' format, convert to date filtering
+        from datetime import datetime
+        try:
+            date_obj = datetime.strptime(month_year, '%Y-%m').date()
+            # Filter by month and year
+            queryset = queryset.filter(month_year__year=date_obj.year, month_year__month=date_obj.month)
+        except ValueError:
+            pass  # invalid format, ignore filter or handle error as you want
+
+    # Group and aggregate count of active and inactive by service_type and month_year
+    summary = (
+        queryset
+        .values('service_type__service_name', 'month_year')
+        .annotate(
+            active_count=Sum('count', filter=models.Q(status='active')),
+            inactive_count=Sum('count', filter=models.Q(status='inactive'))
+        )
+        .order_by('month_year', 'service_type__service_name')
+    )
+
+    paginator = Paginator(summary, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'fiscal_year': fiscal_year,
+        'month_year': month_year,
+    }
+
+    return render(request, 'dashboard/total_user_summary.html', context)
+
+def total_transaction_summary(request):
+    # Filters from GET
+    
+    filters = {}
+    q = Q()
+
+    transaction_range = request.GET.get('transaction_range')
+    if transaction_range:
+        q &= Q(transaction_range_id=transaction_range)
+
+    type_of_transaction = request.GET.get('type_of_transaction')
+    if type_of_transaction:
+        q &= Q(type_of_transaction_id=type_of_transaction)
+
+    form_of_instrument = request.GET.get('form_of_instrument')
+    if form_of_instrument:
+        q &= Q(form_of_instrument_id=form_of_instrument)
+
+    geographical_location = request.GET.get('geographical_location')
+    if geographical_location:
+        q &= Q(geographical_location_id=geographical_location)
+
+    channel_used = request.GET.get('channel_used')
+    if channel_used:
+        q &= Q(channel_used_id=channel_used)
+
+    # Filter by number_of_transactions range if provided
+    min_num = request.GET.get('min_transactions')
+    if min_num:
+        try:
+            min_num = int(min_num)
+            q &= Q(number_of_transactions__gte=min_num)
+        except ValueError:
+            pass
+
+    max_num = request.GET.get('max_transactions')
+    if max_num:
+        try:
+            max_num = int(max_num)
+            q &= Q(number_of_transactions__lte=max_num)
+        except ValueError:
+            pass
+
+    qs = TotalTransaction.objects.filter(q).order_by('-month_year')
+
+    # Aggregate sums
+    aggregates = qs.aggregate(
+        total_transactions=Sum('number_of_transactions'),
+        total_amount=Sum('amount'),
+    )
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Pass filter dropdown options for the template
+    context = {
+        'page_obj': page_obj,
+        'aggregates': aggregates,
+        'transaction_ranges': TransactionRange.objects.all(),
+        'transaction_types': TransactionType.objects.all(),
+        'instrument_types': InstrumentType.objects.all(),
+        'geographical_locations': GeographicalLocation.objects.all(),
+        'channels_used': ChannelUsed.objects.all(),
+        # Keep filters to retain form selections
+        'filter_values': {
+            'transaction_range': transaction_range,
+            'type_of_transaction': type_of_transaction,
+            'form_of_instrument': form_of_instrument,
+            'geographical_location': geographical_location,
+            'channel_used': channel_used,
+            'min_transactions': min_num if min_num else '',
+            'max_transactions': max_num if max_num else '',
+        }
+    }
+
+    return render(request, 'dashboard/total_transaction_summary.html', context)
+
+
+@csrf_exempt
+def api_dashboard_data(request):
+    # TotalUser: sum counts grouped by service_type and month
+    total_users_qs = (
+        TotalUser.objects
+        .values('month_year', 'service_type__service_name')
+        .annotate(total_count=Sum('count'))
+        .order_by('month_year')
+    )
+
+    # Format data for chart: labels (month-year) and datasets per service type
+    # We want to collect unique months & service types
+    months = sorted(set([entry['month_year'].strftime("%b %Y") for entry in total_users_qs]))
+    service_types = sorted(set(entry['service_type__service_name'] for entry in total_users_qs))
+
+    # Build dataset dict with service_type keys and monthly values
+    service_type_data = {stype: [0] * len(months) for stype in service_types}
+    for entry in total_users_qs:
+        month_label = entry['month_year'].strftime("%b %Y")
+        idx = months.index(month_label)
+        service_type_data[entry['service_type__service_name']][idx] = entry['total_count']
+
+    # Prepare datasets for Chart.js
+    colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796']  # add more if needed
+    datasets_users = []
+    for i, stype in enumerate(service_types):
+        datasets_users.append({
+            'label': stype,
+            'data': service_type_data[stype],
+            'backgroundColor': colors[i % len(colors)],
+            'borderColor': colors[i % len(colors)],
+            'fill': False,
+        })
+
+    # TotalTransaction: sum amounts grouped by month_year
+    total_transactions_qs = (
+        TotalTransaction.objects
+        .values('month_year')
+        .annotate(total_amount=Sum('amount'))
+        .order_by('month_year')
+    )
+    months_txn = [entry['month_year'].strftime("%b %Y") for entry in total_transactions_qs]
+    amounts = [float(entry['total_amount']) for entry in total_transactions_qs]
+
+    response_data = {
+        "monthly_customers": {
+            "labels": months,
+            "datasets": datasets_users,
+        },
+        "monthly_transactions": {
+            "labels": months_txn,
+            "datasets": [{
+                "label": "Transaction Amount",
+                "data": amounts,
+                "backgroundColor": "rgba(28, 200, 138, 0.05)",
+                "borderColor": "rgba(28, 200, 138, 1)",
+                "fill": False,
+            }]
+        },
+    }
+    return JsonResponse(response_data)

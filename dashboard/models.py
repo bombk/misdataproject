@@ -132,6 +132,7 @@ class TotalUser(models.Model):
         ('active', 'Active'),
         ('inactive', 'Inactive'),
     ]
+    fiscal_year = models.CharField(max_length=10)
     month_year = models.DateField()
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
@@ -144,6 +145,7 @@ class TotalUser(models.Model):
 
 
 class TotalTransaction(models.Model):
+    fiscal_year = models.CharField(max_length=10)
     month_year = models.DateField()
     transaction_range = models.ForeignKey(TransactionRange, on_delete=models.CASCADE)
     type_of_transaction = models.ForeignKey(TransactionType, on_delete=models.CASCADE)

@@ -54,38 +54,39 @@
                 Data Management
             </div>
             <!-- Nav Item - Data Tables -->
-            <li class="nav-item {% if request.resolver_match.url_name == 'data_tables' %}active{% endif %}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDataTables"
-                    aria-expanded="true" aria-controls="collapseDataTables">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Data Upload</span>
-                </a>
-                <div id="collapseDataTables" class="collapse" aria-labelledby="headingDataTables" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Upload Data:</h6>
-                        <a class="collapse-item" href="{% url 'data_tables' %}?type=customer">Customer Data</a>
-                        <a class="collapse-item" href="{% url 'data_tables' %}?type=transaction">Transaction Data</a>
+            <!-- First collapse -->
+<li class="nav-item {% if request.resolver_match.url_name == 'data_upload' %}active{% endif %}">
+  <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUpload"
+     aria-expanded="true" aria-controls="collapseUpload">
+     <i class="fas fa-fw fa-table"></i>
+     <span>Data Upload</span>
+  </a>
+  <div id="collapseUpload" class="collapse" aria-labelledby="headingDataUpload" data-parent="#accordionSidebar">
+    <div class="bg-white py-2 collapse-inner rounded">
+      <h6 class="collapse-header">Upload Data:</h6>
+      <a class="collapse-item" href="{% url 'admin:dashboard_totaluser_add' %}" target="_blank">User Data</a>
+      <a class="collapse-item" href="{% url 'admin:dashboard_totaltransaction_add' %}" target="_blank">Transaction Data</a>
+    </div>
+  </div>
+</li>
 
-                    </div>
-                </div>
-            </li>
-
-           <!-- Nav Item - Data Tables -->
-            <li class="nav-item {% if request.resolver_match.url_name == 'data_tables' %}active{% endif %}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDataTables"
-                    aria-expanded="true" aria-controls="collapseDataTables">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Data Tables</span>
-                </a>
-                <div id="collapseDataTables" class="collapse" aria-labelledby="headingDataTables" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">View Data:</h6>
-                        <a class="collapse-item" href="{% url 'data_tables' %}?type=customer">Customer Data</a>
-                        <a class="collapse-item" href="{% url 'data_tables' %}?type=transaction">Transaction Data</a>
-                    </div>
-                </div>
-            </li>
-
+<!-- Second collapse -->
+<li class="nav-item {% if request.resolver_match.url_name == 'total_user_list' %}active{% endif %}">
+  <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTables"
+     aria-expanded="true" aria-controls="collapseTables">
+     <i class="fas fa-fw fa-table"></i>
+     <span>Data Tables</span>
+  </a>
+  <div id="collapseTables" class="collapse" aria-labelledby="headingDataTables" data-parent="#accordionSidebar">
+    <div class="bg-white py-2 collapse-inner rounded">
+      <h6 class="collapse-header">View Data:</h6>
+      <a class="collapse-item" href="{% url 'total_user_summary' %}">Users Summary</a>
+      <a class="collapse-item" href="{% url 'total_transaction_summary' %}">Transactions Summary</a>
+      <a class="collapse-item" href="{% url 'data_tables' %}?type=customer">Customer Data</a>
+      <a class="collapse-item" href="{% url 'data_tables' %}?type=transaction">Transaction Data</a>
+    </div>
+  </div>
+</li>
             <!-- Nav Item - Data Upload -->
             <li class="nav-item {% if request.resolver_match.url_name == 'data_upload' %}active{% endif %}">
                 <a class="nav-link" href="{% url 'data_upload' %}">

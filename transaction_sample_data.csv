@@ -1,0 +1,21 @@
+Range of transactions,Form of instrument,Type of transaction,Geographical location,Channel used,Number of transactions,Amount
+Upto 5,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,354078,64342696.81
+Upto 5,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,645109,957561638.5
+Greater than 5,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,1479,10656412.27
+Greater than 5,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,108751,85032058.5
+Greater than 10,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,742,11426246.77
+Greater than 10,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,105866,1825643491
+Greater than 25,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,478,18120661.87
+Greater than 25,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,144078,560683839.1
+Upto 5,Bill payments,Mobile banking transaction,No geographical location,QR code,325132,301685746.4
+Upto 5,Customer banking A/c,Mobile banking transaction,No geographical location,QR code,20106,15082415.8
+Greater than 5,Bill payments,Mobile banking transaction,No geographical location,QR code,17110,281381923
+Greater than 10,Bill payments,Mobile banking transaction,No geographical location,QR code,18254,110534355
+Greater than 25,Bill payments,Mobile banking transaction,No geographical location,QR code,1898,3661044
+Upto 5,Bill payments,Internet banking transaction,No geographical location,Internet channel,823,2126586.27
+Upto 5,Customer banking A/c,Internet banking transaction,No geographical location,Internet channel,528,4408476
+Greater than 5,Bill payments,Internet banking transaction,No geographical location,Internet channel,425,3631556.45
+Greater than 5,Customer banking A/c,Internet banking transaction,No geographical location,Internet channel,340,14766690.15
+Greater than 10,Bill payments,Internet banking transaction,No geographical location,Internet channel,344,15676650
+Greater than 10,Customer banking A/c,Internet banking transaction,No geographical location,Internet channel,1787,147021147
+Greater than 25,Bill payments,Internet banking transaction,No geographical location,Internet channel,828,32096464.7

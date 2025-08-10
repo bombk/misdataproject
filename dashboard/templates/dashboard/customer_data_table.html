@@ -1,0 +1,123 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Customer Data - MIS Data Project{% endblock %}
+
+{% block page_heading %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Customer Data</h1>
+    <div>
+        <a href="{% url 'data_tables' %}?type=customer" class="btn btn-primary btn-sm">
+            <i class="fas fa-users"></i> Customer Data
+        </a>
+        <a href="{% url 'data_tables' %}?type=transaction" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-exchange-alt"></i> Transaction Data
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Customer Data Records</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Branch Code</th>
+                        <th>Branch Name</th>
+                        <th>Customer Category</th>
+                        <th>Service Type</th>
+                        <th>Status</th>
+                        <th>Number of Customers</th>
+                        <th>Month/Year</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in page_obj %}
+                    <tr>
+                        <td>{{ record.branch_code.branch_code }}</td>
+                        <td>{{ record.branch_code.branch_name }}</td>
+                        <td>{{ record.customer_category.category_name }}</td>
+                        <td>{{ record.service_type.service_name }}</td>
+                        <td>
+                            {% if record.status == 'ACTIVE' %}
+                            <span class="badge badge-success">{{ record.status }}</span>
+                            {% else %}
+                            <span class="badge badge-secondary">{{ record.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.number_of_customers|floatformat:0 }}</td>
+                        <td>{{ record.month_year|date:"M Y" }}</td>
+                        <td>{{ record.created_at|date:"M d, Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No customer data found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ data_type }}&page=1">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ data_type }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ data_type }}&page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ data_type }}&page={{ page_obj.paginator.num_pages }}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Page level plugins -->
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script>
+$(document).ready(function() {
+    $('#dataTable').DataTable({
+        "paging": false,
+        "searching": true,
+        "ordering": true,
+        "info": false
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<!-- Custom styles for this page -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+{% endblock %}
+

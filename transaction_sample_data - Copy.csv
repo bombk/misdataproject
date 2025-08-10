@@ -1,0 +1,9 @@
+Range of transactions,Form of instrument,Type of transaction,Geographical location,Channel used,Number of transactions,Amount
+Upto 5,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,354078,64342696.81
+Upto 5,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,645109,957561638.5
+Greater than 5,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,1479,10656412.27
+Greater than 5,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,108751,85032058.5
+Greater than 10,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,742,11426246.77
+Greater than 10,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,105866,1825643491
+Greater than 25,Bill payments,Mobile banking transaction,No geographical location,Mobile channel,478,18120661.87
+Greater than 25,Customer banking A/c,Mobile banking transaction,No geographical location,Mobile channel,144078,560683839.1

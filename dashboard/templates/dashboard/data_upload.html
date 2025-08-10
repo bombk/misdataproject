@@ -1,0 +1,116 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Data Upload - MIS Data Project{% endblock %}
+
+{% block page_heading %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Data Upload</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Messages -->
+{% if messages %}
+<div class="row">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Upload Form -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Upload Monthly Data</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="data_type">Data Type</label>
+                        <select class="form-control" id="data_type" name="data_type" required>
+                            <option value="">Select Data Type</option>
+                            <option value="CUSTOMER">Customer Data</option>
+                            <option value="TRANSACTION">Transaction Data</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="month_year">Month/Year</label>
+                        <input type="month" class="form-control" id="month_year" name="month_year" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data_file">CSV File</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="data_file" name="data_file" accept=".csv" required>
+                            <label class="custom-file-label" for="data_file">Choose file...</label>
+                        </div>
+                        <small class="form-text text-muted">Please upload a CSV file with the appropriate format.</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Data
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Upload Instructions</h6>
+            </div>
+            <div class="card-body">
+                <h6>Customer Data CSV Format:</h6>
+                <ul class="small">
+                    <li>Branch code</li>
+                    <li>Branch name</li>
+                    <li>Categorization of customers</li>
+                    <li>Mobile Banking</li>
+                    <li>Status</li>
+                    <li>Number of customers</li>
+                </ul>
+                
+                <h6 class="mt-3">Transaction Data CSV Format:</h6>
+                <ul class="small">
+                    <li>Range of transactions</li>
+                    <li>Form of instrument</li>
+                    <li>Type of transaction</li>
+                    <li>Geographical location</li>
+                    <li>Channel used</li>
+                    <li>Number of transactions</li>
+                    <li>Amount</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Make sure your CSV file has the exact column headers as specified above.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Update file input label with selected file name
+$('.custom-file-input').on('change', function() {
+    var fileName = $(this).val().split('\\').pop();
+    $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+});
+</script>
+{% endblock %}
+

@@ -16,8 +16,14 @@
 
     <!-- Custom styles for this template-->
     <link href="{% load static %}{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <style>
+    #accordionSidebar {
+        background: linear-gradient(180deg, #00753b 10%, #006030 100%) !important;
+    }
+</style>
 
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    {% endblock %}
 </head>
 
 <body id="page-top">
@@ -26,7 +32,7 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-success sidebar sidebar-dark accordion" id="accordionSidebar">
+        <ul class="navbar-nav sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'dashboard_home' %}">

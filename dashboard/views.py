@@ -38,9 +38,21 @@ from .models import (
 #         'latest_month_year': latest_month_year.strftime('%Y-%m'),
 #         'records': data
 #     })
+@login_required
 def dashboard_home(request):
     # ======== Users Data ========
-    latest_user_month = TotalUser.objects.latest('month_year').month_year
+    selected_month = request.GET.get('month_year')
+    if selected_month:
+        try:
+            # Convert string to date (YYYY-MM-01)
+            latest_user_month = datetime.strptime(selected_month+'-01', '%Y-%m-%d').date()
+            latest_tx_month = latest_user_month
+        except ValueError:
+            messages.error(request, 'Invalid month format. Use YYYY-MM-DD.')
+            return redirect('dashboard_home')
+    else:
+        latest_user_month = TotalUser.objects.latest('month_year').month_year
+        latest_tx_month = TotalTransaction.objects.latest('month_year').month_year
 
     user_aggregated = (
         TotalUser.objects
@@ -62,8 +74,6 @@ def dashboard_home(request):
         counts['total'] = counts['active'] + counts['inactive']
 
     # ======== Transactions Data ========
-    latest_tx_month = TotalTransaction.objects.latest('month_year').month_year
-
     tx_aggregated = (
         TotalTransaction.objects
         .filter(month_year=latest_tx_month)

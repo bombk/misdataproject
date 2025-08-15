@@ -19,7 +19,7 @@
                 <label for="month_year" class="mr-2">Month/Year (YYYY-MM):</label>
                 <input type="month" name="month_year" id="month_year" class="form-control" value="{{ month_year }}">
             </div>
-            <button type="submit" class="btn btn-primary">Filter</button>
+            <button type="submit" class="btn custom_color" style="color: aliceblue;">Filter</button>
         </form>
 
         <table class="table table-bordered table-striped">
@@ -36,7 +36,7 @@
                 {% for record in page_obj %}
                 <tr>
                     <td>{{ record.service_type__service_name }}</td>
-                    <td>{{ record.month_year|date:"M Y" }}</td>
+                    <td>{{ record.month_year|date:"m Y" }}</td>
                     <td>{{ record.active_count|default:0 }}</td>
                     <td>{{ record.inactive_count|default:0 }}</td>
                             <td>{{ record.active_count|default:0|add:record.inactive_count|default:0 }}</td> <!-- sum -->

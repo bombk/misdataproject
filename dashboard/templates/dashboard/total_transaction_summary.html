@@ -80,7 +80,7 @@
         {% for record in page_obj %}
         <tr>
             <td>{{ record.fiscal_year }}</td>
-            <td>{{ record.month_year|date:"M Y" }}</td>
+            <td>{{ record.month_year|date:"m Y" }}</td>
             <td>{{ record.transaction_range.range_name }}</td>
             <td>{{ record.type_of_transaction.transaction_type_name }}</td>
             <td>{{ record.form_of_instrument.instrument_type_name }}</td>

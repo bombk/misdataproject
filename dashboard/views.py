@@ -6,29 +6,88 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.db import models
 from django.db import transaction
+from django.core.serializers import serialize
 from datetime import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.forms.models import model_to_dict
 import csv
 import io
 import json
+from django.utils import timezone
+from datetime import timedelta
 from .models import (
     Branch, CustomerCategory, ServiceType,TransactionRange, TransactionType,
     InstrumentType, GeographicalLocation, ChannelUsed,
     CustomerData, TransactionData, DataUploadLog, TotalUser, TotalTransaction
 )
 
-@login_required
+# @login_required
+# def dashboard_home(request):
+#     # Get the latest month_year
+#     latest_month_year = TotalUser.objects.latest('month_year').month_year
+
+#     # Filter all rows with that month_year
+#     latest_records = TotalUser.objects.filter(month_year=latest_month_year)
+
+#     # Convert queryset to list of dicts
+#     data = [model_to_dict(record) for record in latest_records]
+
+#     return JsonResponse({
+#         'latest_month_year': latest_month_year.strftime('%Y-%m'),
+#         'records': data
+#     })
 def dashboard_home(request):
-    """Main dashboard view with summary statistics"""
-    context = {
-        'total_branches': Branch.objects.count(),
-        'total_customer_records': CustomerData.objects.count(),
-        'total_transaction_records': TransactionData.objects.count(),
-        'recent_uploads': DataUploadLog.objects.order_by('-upload_date')[:5],
-    }
-    return render(request, 'dashboard/index.html', context)
+    # ======== Users Data ========
+    latest_user_month = TotalUser.objects.latest('month_year').month_year
+
+    user_aggregated = (
+        TotalUser.objects
+        .filter(month_year=latest_user_month)
+        .values('service_type__service_name', 'status')
+        .annotate(total_count=Sum('count'))
+    )
+
+    user_cards = {}
+    for record in user_aggregated:
+        service_name = record['service_type__service_name']
+        status = record['status']
+        total_count = record['total_count']
+        if service_name not in user_cards:
+            user_cards[service_name] = {'active': 0, 'inactive': 0}
+        user_cards[service_name][status] = total_count
+
+    for service_name, counts in user_cards.items():
+        counts['total'] = counts['active'] + counts['inactive']
+
+    # ======== Transactions Data ========
+    latest_tx_month = TotalTransaction.objects.latest('month_year').month_year
+
+    tx_aggregated = (
+        TotalTransaction.objects
+        .filter(month_year=latest_tx_month)
+        .values('form_of_instrument__instrument_type_name')
+        .annotate(
+            total_transactions=Sum('number_of_transactions'),
+            total_amount=Sum('amount')
+        )
+    )
+
+    transaction_cards = {}
+    for record in tx_aggregated:
+        instrument_name = record['form_of_instrument__instrument_type_name']
+        transaction_cards[instrument_name] = {
+            'total_transactions': record['total_transactions'],
+            'total_amount': record['total_amount']
+        }
+
+    return render(request, 'dashboard/index.html', {
+        'latest_user_month': latest_user_month.strftime('%Y-%m'),
+        'user_cards': user_cards,
+        'latest_tx_month': latest_tx_month.strftime('%Y-%m'),
+        'transaction_cards': transaction_cards
+    })
 @login_required
 def master_parameters(request):
     """View for managing master parameters"""
@@ -204,43 +263,43 @@ def process_transaction_data(uploaded_file, month_year):
     except Exception as e:
         return {'status': 'FAILED', 'records_uploaded': 0, 'error_message': str(e)}
 
-#@csrf_exempt
-# def api_dashboard_data(request):
-#     """API endpoint for dashboard charts data"""
-#     if request.method == 'GET':
-#         # Customer data by status
-#         customer_status_data = CustomerData.objects.values('status').annotate(
-#             total=Sum('number_of_customers')
-#         )
+@csrf_exempt
+def api_dashboard_data(request):
+    """API endpoint for dashboard charts data"""
+    if request.method == 'GET':
+        # Customer data by status
+        customer_status_data = CustomerData.objects.values('status').annotate(
+            total=Sum('number_of_customers')
+        )
         
-#         # Transaction data by type
-#         transaction_type_data = TransactionData.objects.values(
-#             'type_of_transaction__transaction_type_name'
-#         ).annotate(
-#             total_amount=Sum('amount'),
-#             total_count=Sum('number_of_transactions')
-#         )
+        # Transaction data by type
+        transaction_type_data = TransactionData.objects.values(
+            'type_of_transaction__transaction_type_name'
+        ).annotate(
+            total_amount=Sum('amount'),
+            total_count=Sum('number_of_transactions')
+        )
         
-#         # Monthly trends
-#         monthly_customer_data = CustomerData.objects.values('month_year').annotate(
-#             total_customers=Sum('number_of_customers')
-#         ).order_by('month_year')
+        # Monthly trends
+        monthly_customer_data = CustomerData.objects.values('month_year').annotate(
+            total_customers=Sum('number_of_customers')
+        ).order_by('month_year')
         
-#         monthly_transaction_data = TransactionData.objects.values('month_year').annotate(
-#             total_amount=Sum('amount'),
-#             total_transactions=Sum('number_of_transactions')
-#         ).order_by('month_year')
+        monthly_transaction_data = TransactionData.objects.values('month_year').annotate(
+            total_amount=Sum('amount'),
+            total_transactions=Sum('number_of_transactions')
+        ).order_by('month_year')
         
-#         data = {
-#             'customer_status': list(customer_status_data),
-#             'transaction_types': list(transaction_type_data),
-#             'monthly_customers': list(monthly_customer_data),
-#             'monthly_transactions': list(monthly_transaction_data),
-#         }
+        data = {
+            'customer_status': list(customer_status_data),
+            'transaction_types': list(transaction_type_data),
+            'monthly_customers': list(monthly_customer_data),
+            'monthly_transactions': list(monthly_transaction_data),
+        }
         
-#         return JsonResponse(data)
+        return JsonResponse(data)
     
-#     return JsonResponse({'error': 'Method not allowed'}, status=405)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -422,64 +481,3 @@ def total_transaction_summary(request):
     return render(request, 'dashboard/total_transaction_summary.html', context)
 
 
-@csrf_exempt
-def api_dashboard_data(request):
-    # TotalUser: sum counts grouped by service_type and month
-    total_users_qs = (
-        TotalUser.objects
-        .values('month_year', 'service_type__service_name')
-        .annotate(total_count=Sum('count'))
-        .order_by('month_year')
-    )
-
-    # Format data for chart: labels (month-year) and datasets per service type
-    # We want to collect unique months & service types
-    months = sorted(set([entry['month_year'].strftime("%b %Y") for entry in total_users_qs]))
-    service_types = sorted(set(entry['service_type__service_name'] for entry in total_users_qs))
-
-    # Build dataset dict with service_type keys and monthly values
-    service_type_data = {stype: [0] * len(months) for stype in service_types}
-    for entry in total_users_qs:
-        month_label = entry['month_year'].strftime("%b %Y")
-        idx = months.index(month_label)
-        service_type_data[entry['service_type__service_name']][idx] = entry['total_count']
-
-    # Prepare datasets for Chart.js
-    colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796']  # add more if needed
-    datasets_users = []
-    for i, stype in enumerate(service_types):
-        datasets_users.append({
-            'label': stype,
-            'data': service_type_data[stype],
-            'backgroundColor': colors[i % len(colors)],
-            'borderColor': colors[i % len(colors)],
-            'fill': False,
-        })
-
-    # TotalTransaction: sum amounts grouped by month_year
-    total_transactions_qs = (
-        TotalTransaction.objects
-        .values('month_year')
-        .annotate(total_amount=Sum('amount'))
-        .order_by('month_year')
-    )
-    months_txn = [entry['month_year'].strftime("%b %Y") for entry in total_transactions_qs]
-    amounts = [float(entry['total_amount']) for entry in total_transactions_qs]
-
-    response_data = {
-        "monthly_customers": {
-            "labels": months,
-            "datasets": datasets_users,
-        },
-        "monthly_transactions": {
-            "labels": months_txn,
-            "datasets": [{
-                "label": "Transaction Amount",
-                "data": amounts,
-                "backgroundColor": "rgba(28, 200, 138, 0.05)",
-                "borderColor": "rgba(28, 200, 138, 1)",
-                "fill": False,
-            }]
-        },
-    }
-    return JsonResponse(response_data)

@@ -4,7 +4,7 @@ from .models import (
     InstrumentType, GeographicalLocation, ChannelUsed,
     CustomerData, TransactionData, DataUploadLog,TotalUser, TotalTransaction
 )
-
+import nepali_datetime
 @admin.register(Branch)
 class BranchAdmin(admin.ModelAdmin):
     list_display = ['branch_code', 'branch_name']

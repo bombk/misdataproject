@@ -52,7 +52,7 @@ def dashboard_home(request):
             return redirect('dashboard_home')
     else:
         latest_user_month = TotalUser.objects.latest('month_year').month_year
-        latest_tx_month = TotalTransaction.objects.latest('month_year').month_year
+        latest_tx_month = latest_user_month
 
     user_aggregated = (
         TotalUser.objects
